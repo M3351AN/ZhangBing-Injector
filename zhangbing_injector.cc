@@ -36,6 +36,7 @@ struct DriverInjectionData {
 std::string cachedDriverName = "";
 
 std::wstring GetDriverNameW() {
+  srand((unsigned int)GetTickCount());
   if (cachedDriverName.empty()) {
     // Create a random name
     char buffer[100]{};
@@ -284,22 +285,23 @@ DWORD FindProcessId(const std::wstring& process_name) {
   return pid;
 }
 
-int main(int argc, wchar_t* argv[]) {
-  if (argc < 3) {
-    std::wcout << L"Usage: " << argv[0] << L" <DllPath> <ProcessName>"
-               << std::endl;
-    system("pause");
-    return 1;
-  }
-
-  std::wstring dll_path = argv[1];
-  std::wstring process_name = argv[2];
-
+int main() {
   std::cout << "Zhang Bing WHQL Signed Super Trash Injector\n\n";
-  std::cout << "[<] Loading Dr.Zhang driver" << std::endl;
+
+  std::wstring dll_path;
+  std::wstring process_name;
+
+  std::wcout << L"Please enter DLL path: ";
+  std::wcin >> dll_path;
+
+  std::wcout << L"Please enter process name: ";
+  std::wcin >> process_name;
+
+
+  std::cout << "[<] Loading Dr.Zhang driver\n";
   std::wstring driver_path = GetDriverPath();
   if (driver_path.empty()) {
-    std::cout << "Can't find TEMP folder" << std::endl;
+    std::cout << "Can't find TEMP folder\n";
     system("pause");
     return 1;
   }
@@ -308,41 +310,42 @@ int main(int argc, wchar_t* argv[]) {
   if (!CreateFileFromMemory(
           driver_path, reinterpret_cast<const char*>(rawdata::kRxdriverRawData),
           sizeof(rawdata::kRxdriverRawData))) {
-    std::cout << "Failed to create bingbing driver file" << std::endl;
+    std::cout << "Failed to create bingbing driver file\n";
     system("pause");
     return 1;
   }
 
   auto status = AcquireDebugPrivilege();
   if (!NT_SUCCESS(status)) {
-    std::cout << "Failed to acquire SeDebugPrivilege" << std::endl;
+    std::cout << "Failed to acquire SeDebugPrivilege\n";
     _wremove(driver_path.c_str());
+    system("pause");
     return status;
   }
 
   status = RegisterAndStart(driver_path, GetDriverNameW());
   if (!NT_SUCCESS(status)) {
-    std::cout << "Failed to register and start service for Zhang Bing's driver"
-              << std::endl;
+    std::cout
+        << "Failed to register and start service for Zhang Bing's driver\n";
     _wremove(driver_path.c_str());
+    system("pause");
     return status;
   }
 
   DWORD target_pid = FindProcessId(process_name);
   if (target_pid == 0) {
-    std::wcout << L"Error: Process " << process_name << L" not found."
-               << std::endl;
+    std::wcout << L"Error: Process " << process_name << L" not found.\n";
     Unload();
     system("pause");
     return 1;
   }
-  std::cout << "Found process PID: " << target_pid << std::endl;
+  std::cout << "Found process PID: " << target_pid << "\n";
 
   std::vector<BYTE> dll_data;
   DWORD dll_size = 0;
 
   if (!ReadDllFile(dll_path, dll_data, dll_size)) {
-    std::wcout << L"Error: Cannot read " << dll_path << std::endl;
+    std::wcout << L"Error: Cannot read " << dll_path << L".\n";
     Unload();
     system("pause");
     return 1;
@@ -361,7 +364,7 @@ int main(int argc, wchar_t* argv[]) {
     return 1;
   }
 
-  std::cout << "Driver handle: " << driver_handle << std::endl;
+  std::cout << "Driver handle: " << driver_handle << "\n";
 
   DriverInjectionData injection_data = {0};
   injection_data.process_id = target_pid;
@@ -371,14 +374,12 @@ int main(int argc, wchar_t* argv[]) {
 
   std::cout << "\nSending to driver:\n";
   std::cout << "  Structure size: " << sizeof(injection_data) << " bytes\n";
-  std::cout << "  ProcessId (offset 0): " << injection_data.process_id
-            << std::endl;
-  std::cout << "  DataSize (offset 8): " << injection_data.data_size
-            << std::endl;
+  std::cout << "  ProcessId (offset 0): " << injection_data.process_id << "\n";
+  std::cout << "  DataSize (offset 8): " << injection_data.data_size << "\n";
   std::cout << "  DataBuffer (offset 16): " << injection_data.data_buffer
-            << std::endl;
+            << "\n";
   std::cout << "  VerifyCode (offset 28): " << injection_data.verify_code
-            << std::endl;
+            << "\n";
 
   DWORD bytes_returned = 0;
   BOOL success =
@@ -387,7 +388,7 @@ int main(int argc, wchar_t* argv[]) {
 
   if (success) {
     std::cout << "\nIOCTL sent successfully!\n";
-    std::cout << "Bytes returned: " << bytes_returned << std::endl;
+    std::cout << "Bytes returned: " << bytes_returned << "\n";
     Sleep(3000);
   } else {
     std::cout << "\nError: DeviceIoControl failed (error " << GetLastError()
