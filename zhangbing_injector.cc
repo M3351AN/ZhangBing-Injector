@@ -332,6 +332,7 @@ int main(int argc, wchar_t* argv[]) {
   if (target_pid == 0) {
     std::wcout << L"Error: Process " << process_name << L" not found."
                << std::endl;
+    Unload();
     system("pause");
     return 1;
   }
@@ -342,6 +343,7 @@ int main(int argc, wchar_t* argv[]) {
 
   if (!ReadDllFile(dll_path, dll_data, dll_size)) {
     std::wcout << L"Error: Cannot read " << dll_path << std::endl;
+    Unload();
     system("pause");
     return 1;
   }
@@ -354,6 +356,7 @@ int main(int argc, wchar_t* argv[]) {
 
   if (driver_handle == INVALID_HANDLE_VALUE) {
     std::cout << "Error: Cannot open driver (error " << GetLastError() << ")\n";
+    Unload();
     system("pause");
     return 1;
   }
