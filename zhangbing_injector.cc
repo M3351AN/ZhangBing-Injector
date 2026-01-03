@@ -9,10 +9,10 @@
 #pragma warning(pop)
 #include <tlhelp32.h>
 
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <fstream>
 
 #include "./zhangbing_driver.h"
 
@@ -20,7 +20,7 @@
 
 #define DRIVER_SYMBOLIC_LINK L"\\\\.\\mLnUcWtv9IaZf8LBiMXD"
 #define IOCTL_INJECT_DLL 2236420
-#define VERIFICATION_CODE 721140700 // magic number lmfao
+#define VERIFICATION_CODE 721140700  // magic number lmfao
 
 #pragma pack(push, 1)
 struct DriverInjectionData {
@@ -74,7 +74,7 @@ std::wstring GetDriverPath() {
 }
 
 bool CreateFileFromMemory(const std::wstring& desired_file_path,
-                                    const char* address, size_t size) {
+                          const char* address, size_t size) {
   std::ofstream file_ofstream(desired_file_path.c_str(),
                               std::ios_base::out | std::ios_base::binary);
 
@@ -98,15 +98,15 @@ NTSTATUS AcquireDebugPrivilege() {
 
   ULONG SE_DEBUG_PRIVILEGE = 20UL;
   BOOLEAN SeDebugWasEnabled;
-  NTSTATUS Status = RtlAdjustPrivilege(SE_DEBUG_PRIVILEGE, TRUE, FALSE,
-                                           &SeDebugWasEnabled);
+  NTSTATUS Status =
+      RtlAdjustPrivilege(SE_DEBUG_PRIVILEGE, TRUE, FALSE, &SeDebugWasEnabled);
 
   return Status;
 }
 
 extern "C" NTSTATUS NtLoadDriver(PUNICODE_STRING DriverServiceName);
 NTSTATUS RegisterAndStart(const std::wstring& driver_path,
-                                   const std::wstring& serviceName) {
+                          const std::wstring& serviceName) {
   const static DWORD ServiceTypeKernel = 1;
   const std::wstring servicesPath =
       L"SYSTEM\\CurrentControlSet\\Services\\" + serviceName;
@@ -150,8 +150,8 @@ NTSTATUS RegisterAndStart(const std::wstring& driver_path,
 
   ULONG SE_LOAD_DRIVER_PRIVILEGE = 10UL;
   BOOLEAN SeLoadDriverWasEnabled;
-  NTSTATUS ntStatus = RtlAdjustPrivilege(SE_LOAD_DRIVER_PRIVILEGE, TRUE,
-                                             FALSE, &SeLoadDriverWasEnabled);
+  NTSTATUS ntStatus = RtlAdjustPrivilege(SE_LOAD_DRIVER_PRIVILEGE, TRUE, FALSE,
+                                         &SeLoadDriverWasEnabled);
   if (!NT_SUCCESS(ntStatus)) {
     RegDeleteTreeW(HKEY_LOCAL_MACHINE, servicesPath.c_str());
     return ntStatus;
@@ -284,9 +284,19 @@ DWORD FindProcessId(const std::wstring& process_name) {
   return pid;
 }
 
-int main() {
+int main(int argc, wchar_t* argv[]) {
+  if (argc < 3) {
+    std::wcout << L"Usage: " << argv[0] << L" <DllPath> <ProcessName>"
+               << std::endl;
+    system("pause");
+    return 1;
+  }
+
+  std::wstring dll_path = argv[1];
+  std::wstring process_name = argv[2];
+
   std::cout << "Zhang Bing WHQL Signed Super Trash Injector\n\n";
-  std::cout << "[<] Loading Dr.Zhang driver"<< std::endl;
+  std::cout << "[<] Loading Dr.Zhang driver" << std::endl;
   std::wstring driver_path = GetDriverPath();
   if (driver_path.empty()) {
     std::cout << "Can't find TEMP folder" << std::endl;
@@ -296,16 +306,16 @@ int main() {
 
   _wremove(driver_path.c_str());
   if (!CreateFileFromMemory(
-          driver_path,reinterpret_cast<const char*>(rawdata::kRxdriverRawData),
+          driver_path, reinterpret_cast<const char*>(rawdata::kRxdriverRawData),
           sizeof(rawdata::kRxdriverRawData))) {
     std::cout << "Failed to create bingbing driver file" << std::endl;
     system("pause");
     return 1;
   }
 
-  	auto status = AcquireDebugPrivilege();
+  auto status = AcquireDebugPrivilege();
   if (!NT_SUCCESS(status)) {
-   std::cout <<"Failed to acquire SeDebugPrivilege" << std::endl;
+    std::cout << "Failed to acquire SeDebugPrivilege" << std::endl;
     _wremove(driver_path.c_str());
     return status;
   }
@@ -313,32 +323,25 @@ int main() {
   status = RegisterAndStart(driver_path, GetDriverNameW());
   if (!NT_SUCCESS(status)) {
     std::cout << "Failed to register and start service for Zhang Bing's driver"
-           << std::endl;
+              << std::endl;
     _wremove(driver_path.c_str());
     return status;
   }
 
-  DWORD target_pid = 0;
-
-  std::cout << "Enter target process PID (0 to find notepad.exe): ";
-  std::cin >> target_pid;
-
+  DWORD target_pid = FindProcessId(process_name);
   if (target_pid == 0) {
-    target_pid = FindProcessId(L"notepad.exe");
-    if (target_pid == 0) {
-      std::cout << "Error: Notepad not found. Please open notepad.exe or enter "
-                   "PID manually.\n";
-      system("pause");
-      return 1;
-    }
-    std::cout << "Found notepad.exe PID: " << target_pid << std::endl;
+    std::wcout << L"Error: Process " << process_name << L" not found."
+               << std::endl;
+    system("pause");
+    return 1;
   }
+  std::cout << "Found process PID: " << target_pid << std::endl;
 
   std::vector<BYTE> dll_data;
   DWORD dll_size = 0;
 
-  if (!ReadDllFile(L"test.dll", dll_data, dll_size)) {
-    std::cout << "Error: Cannot read test.dll\n";
+  if (!ReadDllFile(dll_path, dll_data, dll_size)) {
+    std::wcout << L"Error: Cannot read " << dll_path << std::endl;
     system("pause");
     return 1;
   }
