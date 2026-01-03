@@ -382,41 +382,7 @@ int main() {
   if (success) {
     std::cout << "\nIOCTL sent successfully!\n";
     std::cout << "Bytes returned: " << bytes_returned << std::endl;
-
-    std::cout << "\nWaiting for driver to process (3 seconds)...\n";
     Sleep(3000);
-
-    HWND target_window = NULL;
-
-    EnumWindows(
-        [](HWND hwnd, LPARAM l_param) -> BOOL {
-          DWORD window_pid = 0;
-          GetWindowThreadProcessId(hwnd, &window_pid);
-          if (window_pid == static_cast<DWORD>(l_param)) {
-            *reinterpret_cast<HWND*>(l_param) = hwnd;
-            return FALSE;
-          }
-          return TRUE;
-        },
-        reinterpret_cast<LPARAM>(&target_window));
-
-    if (target_window) {
-      std::cout << "Found target window. Sending messages to trigger "
-                   "TranslateMessage...\n";
-
-      for (int i = 0; i < 10; ++i) {
-        // trigger TranslateMessage hook
-        SendMessage(target_window, WM_MOUSEMOVE, 0, MAKELPARAM(10, 10));
-
-        Sleep(50);
-      }
-
-      std::cout << "Messages sent. Check if DLL was loaded.\n";
-    } else {
-      std::cout << "Warning: Could not find target window.\n";
-      std::cout << "Please manually interact with the target process (type, "
-                   "click, etc.)\n";
-    }
   } else {
     std::cout << "\nError: DeviceIoControl failed (error " << GetLastError()
               << ")\n";
