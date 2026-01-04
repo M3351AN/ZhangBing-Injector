@@ -1,5 +1,6 @@
 ﻿// 渟雲. Released to public domain
 // 感谢张兵大神的WHQL驱动，让我们可以愉快地进行DLL注入实验！
+#define NOMINMAX
 #include <windows.h>
 #include <winternl.h>
 #pragma comment(lib, "ntdll.lib")
@@ -292,33 +293,24 @@ DWORD FindProcessId(const std::wstring& process_name) {
   return pid;
 }
 
-int main() {
+int wmain(int argc, wchar_t* argv[]) {
+  std::locale::global(std::locale("en_US.UTF-8"));
   std::cout << "Zhang Bing WHQL Signed Super Trash Injector\n\n";
 
   std::wstring dll_path;
   std::wstring process_name;
-  LPWSTR* szArgList;
-  int nArgs;
-  szArgList = CommandLineToArgvW(GetCommandLineW(), &nArgs);
-  if (szArgList == nullptr) {
-    std::wcout << L"Error: Failed to parse command line\n";
-    std::wcout.flush();
-    system("pause");
-    return 1;
-  }
 
-  if (nArgs >= 2) {
-    dll_path = szArgList[1];
+  if (argc >= 2) {
+    dll_path = argv[1];
     std::wcout << L"DLL path: " << dll_path << L"\n";
     std::wcout.flush();
   }
-  if (nArgs >= 3) {
-    process_name = szArgList[2];
-    std::wcout << L"Process name: " << process_name
-               << L"\n";
+  if (argc >= 3) {
+    process_name = argv[2];
+    std::wcout << L"Process name: " << process_name << L"\n";
     std::wcout.flush();
   }
-  LocalFree(szArgList);
+
   if (dll_path.empty()) {
     std::wcout << L"Please enter DLL path: ";
     std::wcin >> dll_path;
