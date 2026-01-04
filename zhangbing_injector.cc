@@ -409,7 +409,6 @@ int wmain(int argc, wchar_t* argv[]) {
   if (success) {
     std::cout << "\nIOCTL sent successfully!\n";
     std::cout << "Bytes returned: " << bytes_returned << "\n";
-    Sleep(3000);
   } else {
     std::cout << "\nError: DeviceIoControl failed (error " << GetLastError()
               << ")\n";
