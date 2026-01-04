@@ -298,7 +298,7 @@ int main() {
   std::wcin >> process_name;
 
 
-  std::cout << "[<] Loading Dr.Zhang driver\n";
+  std::cout << "Loading Dr.Zhang driver\n";
   std::wstring driver_path = GetDriverPath();
   if (driver_path.empty()) {
     std::cout << "Can't find TEMP folder\n";
@@ -374,11 +374,11 @@ int main() {
 
   std::cout << "\nSending to driver:\n";
   std::cout << "  Structure size: " << sizeof(injection_data) << " bytes\n";
-  std::cout << "  ProcessId (offset 0): " << injection_data.process_id << "\n";
-  std::cout << "  DataSize (offset 8): " << injection_data.data_size << "\n";
-  std::cout << "  DataBuffer (offset 16): " << injection_data.data_buffer
+  std::cout << "  ProcessId: " << injection_data.process_id << "\n";
+  std::cout << "  DataSize: " << injection_data.data_size << "\n";
+  std::cout << "  DataBuffer: " << injection_data.data_buffer
             << "\n";
-  std::cout << "  VerifyCode (offset 28): " << injection_data.verify_code
+  std::cout << "  VerifyCode: " << injection_data.verify_code
             << "\n";
 
   DWORD bytes_returned = 0;
