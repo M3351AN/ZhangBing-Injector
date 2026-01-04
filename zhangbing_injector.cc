@@ -233,6 +233,7 @@ NTSTATUS Unload() {
   for (size_t i = 0; i < newFileLen; i++) {
     randomData[i] = (BYTE)(rand() % 255);
   }
+  file_ofstream.write(reinterpret_cast<char*>(randomData), newFileLen);
   file_ofstream.close();
   delete[] randomData;
 
@@ -271,14 +272,20 @@ DWORD FindProcessId(const std::wstring& process_name) {
     process_entry.dwSize = sizeof(PROCESSENTRY32W);
 
     if (Process32FirstW(snapshot, &process_entry)) {
+      std::wstring process_name_with_exe = process_name + L".exe";
+
       do {
-        if (_wcsicmp(process_entry.szExeFile, process_name.c_str()) == 0) {
+        bool is_match =
+            (_wcsicmp(process_entry.szExeFile, process_name.c_str()) == 0) ||
+            (_wcsicmp(process_entry.szExeFile, process_name_with_exe.c_str()) ==
+             0);
+
+        if (is_match) {
           pid = process_entry.th32ProcessID;
           break;
         }
       } while (Process32NextW(snapshot, &process_entry));
     }
-
     CloseHandle(snapshot);
   }
 
@@ -290,13 +297,36 @@ int main() {
 
   std::wstring dll_path;
   std::wstring process_name;
+  LPWSTR* szArgList;
+  int nArgs;
+  szArgList = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+  if (szArgList == nullptr) {
+    std::wcout << L"Error: Failed to parse command line\n";
+    std::wcout.flush();
+    system("pause");
+    return 1;
+  }
 
-  std::wcout << L"Please enter DLL path: ";
-  std::wcin >> dll_path;
-
-  std::wcout << L"Please enter process name: ";
-  std::wcin >> process_name;
-
+  if (nArgs >= 2) {
+    dll_path = szArgList[1];
+    std::wcout << L"DLL path: " << dll_path << L"\n";
+    std::wcout.flush();
+  }
+  if (nArgs >= 3) {
+    process_name = szArgList[2];
+    std::wcout << L"Process name: " << process_name
+               << L"\n";
+    std::wcout.flush();
+  }
+  LocalFree(szArgList);
+  if (dll_path.empty()) {
+    std::wcout << L"Please enter DLL path: ";
+    std::wcin >> dll_path;
+  }
+  if (process_name.empty()) {
+    std::wcout << L"Please enter process name: ";
+    std::wcin >> process_name;
+  }
 
   std::cout << "Loading Dr.Zhang driver\n";
   std::wstring driver_path = GetDriverPath();
@@ -376,10 +406,8 @@ int main() {
   std::cout << "  Structure size: " << sizeof(injection_data) << " bytes\n";
   std::cout << "  ProcessId: " << injection_data.process_id << "\n";
   std::cout << "  DataSize: " << injection_data.data_size << "\n";
-  std::cout << "  DataBuffer: " << injection_data.data_buffer
-            << "\n";
-  std::cout << "  VerifyCode: " << injection_data.verify_code
-            << "\n";
+  std::cout << "  DataBuffer: " << injection_data.data_buffer << "\n";
+  std::cout << "  VerifyCode: " << injection_data.verify_code << "\n";
 
   DWORD bytes_returned = 0;
   BOOL success =
